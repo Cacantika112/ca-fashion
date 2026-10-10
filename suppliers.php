@@ -1,0 +1,11 @@
+<?php
+require 'config.php'; require_login(); $page_title='Supplier'; $error='';
+if($_SERVER['REQUEST_METHOD']==='POST'){require_admin();$name=trim($_POST['name']??'');$phone=trim($_POST['phone']??'');$address=trim($_POST['address']??'');if($name==='')$error='Nama supplier wajib diisi.';else{$s=$pdo->prepare("INSERT INTO suppliers(name,phone,address) VALUES(?,?,?)");$s->execute([$name,$phone,$address]);flash('Supplier ditambahkan.');header('Location: suppliers.php');exit;}}
+if(isset($_GET['delete'])){require_admin();$s=$pdo->prepare("DELETE FROM suppliers WHERE id=?");$s->execute([(int)$_GET['delete']]);flash('Supplier dihapus.');header('Location: suppliers.php');exit;}
+$rows=$pdo->query("SELECT s.*,COUNT(ps.product_id) total FROM suppliers s LEFT JOIN product_suppliers ps ON ps.supplier_id=s.id GROUP BY s.id ORDER BY s.name")->fetchAll();require 'partials/header.php';?>
+<div class="page-head"><div><h1>Supplier ♡</h1><div class="sub">Daftar pemasok koleksi baju.</div></div></div>
+<?php if($error):?><p class="error"><?=e($error)?></p><?php endif;?>
+<?php if($_SESSION['user']['role']==='admin'):?><div class="card"><form method="post" class="form-grid"><div><label>Nama supplier</label><input name="name" required></div><div><label>Nomor telepon</label><input name="phone"></div><div><label>Alamat</label><input name="address"></div><div style="align-self:end"><button class="btn">＋ Tambah Supplier</button></div></form></div><?php endif;?>
+<div class="card table-wrap"><table><thead><tr><th>Nama</th><th>Telepon</th><th>Alamat</th><th>Produk terhubung</th><?php if($_SESSION['user']['role']==='admin'):?><th>Aksi</th><?php endif;?></tr></thead><tbody><?php foreach($rows as $r):?><tr><td><?=e($r['name'])?></td><td><?=e($r['phone'])?></td><td><?=e($r['address'])?></td><td><?=$r['total']?></td><?php if($_SESSION['user']['role']==='admin'):?><td><a class="btn btn-danger" href="?delete=<?=$r['id']?>" onclick="return confirm('Hapus supplier?')">Hapus</a></td><?php endif;?></tr><?php endforeach;?></tbody></table></div>
+<div class="card"><h2>Hubungkan Produk & Supplier</h2><p class="sub">Relasi many-to-many tersimpan di tabel <code>product_suppliers</code>. Untuk versi tugas ini, tabel relasinya disiapkan di database.</p></div>
+<?php require 'partials/footer.php';?>
